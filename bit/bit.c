@@ -33,5 +33,5 @@
 __attribute__((visibility("default")))
 K1(kexport)
 {
-    R k(0,"{`bitnot`bitand`bitor`bitxor`bitcount`leadz`trailz!x}",knk(7,dl(not,1),dl(and,2),dl(or,2),dl(xor,2),dl(popc,1),dl(leadz,1),dl(trailz,1)),0);
+    R k(0,"`bitnot`bitand`bitor`bitxor`bitcount`leadz`trailz!",knk(7,dl(not,1),dl(and,2),dl(or,2),dl(xor,2),dl(popc,1),dl(leadz,1),dl(trailz,1)),0);
 }

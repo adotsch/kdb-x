@@ -1,4 +1,3 @@
-
 include ../common.mk
 
 $(LIB): bit.c bit.h binop.c bitfni.c not.c k.h $(LA)
