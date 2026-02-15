@@ -123,7 +123,7 @@ Z K2(binop)
             if(SAMET) {SAMELEN; K r=ktn(xt,xn); DO(2*xn,kJ(r)[i]=xJ[i] BINOP kJ(y)[i]); return r;}
         break;
     }
-    return krr("nyi");
+    return krr("type");
 }
 
 #undef binop

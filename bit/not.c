@@ -21,6 +21,16 @@ K not(K x)
                 if(!(kK(r)[i]=not(xK[i]))) return r->n=i,r0(r),(K)0;
             return r;
         }
+        case 99:
+        {
+            K nxy = not(xy);
+            return nxy ? xD(r1(xx),nxy) : nxy;
+        }
+        case 98:
+        {
+            K nt = not(x->k);
+            return nt ? xT(nt) : nt;
+        }
     }
     return krr("type");
 }

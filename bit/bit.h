@@ -13,4 +13,5 @@
 #define OR |
 #define XOR ^
 
+#define bswap64 __builtin_bswap64
 #endif
