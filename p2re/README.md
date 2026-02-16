@@ -8,7 +8,7 @@ The q api is similar to [like](https://code.kx.com/q/ref/like/) and it works wit
 
 ## Examples
 ```q
-q)\l regex.q
+q).q,:use`dot.p2re
 q)s where (s:200?`3) rmatch "[a-d][e-h][i-l]|[i-k][e-h][a-d]"
 `cfl`iec`kfd`bfk`cfi`cek`cei`kgd`jec
 q)n:"(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"
@@ -38,7 +38,7 @@ q)"192.168.1.100" irmatches ip
 You can load the module like 
 
 ```q
-.q,:use`dot.posix2
+.q,:use`dot.p2re
 ```
 
 That will add the functons to the `.q` namespace that allows using infix notations, like for any other keywords.
@@ -46,7 +46,7 @@ That will add the functons to the `.q` namespace that allows using infix notatio
 If you don't like that, you can add them to the namespace of your liking, eg. to add them to `.regex`, you can
 
 ```q
-.regex:use`dot.posix2
+.regex:use`dot.p2re
 ```
 
 The rest of this document assumes the `.q` namespace.

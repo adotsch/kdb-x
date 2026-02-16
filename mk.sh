@@ -3,5 +3,5 @@ for p in linux arm64 win64; do \
 done
 
 for p in linux arm64; do \
-    docker run -it --rm --user $(id -u):$(id -g) -v $(pwd):/workdir -e CROSS_TRIPLE=$p multiarch/crossbuild make -C posix2; \
+    docker run -it --rm --user $(id -u):$(id -g) -v $(pwd):/workdir -e CROSS_TRIPLE=$p multiarch/crossbuild make -C p2re; \
 done
