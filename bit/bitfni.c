@@ -1,9 +1,22 @@
 #include "bit.h"
 
 #ifndef bitfni
-
-#define bitfni   popc
+#define bitfni   bitcount
+#if _WIN32
+static inline I popcount(I x) {
+    I r;
+    __asm__("popcntl %1, %0":"=r"(r):"rm"(x));
+    return r;
+}
+static inline J popcountll(J x) {
+    J r;
+    __asm__("popcntq %1, %0":"=r"(r):"rm"(x));
+    return r;
+}
+#define BITFN(x) _Generic((x), default: popcount(x), J: popcountll(x))
+#else
 #define BITFN(x) _Generic((x), default: __builtin_popcount(x), J: __builtin_popcountll(x))
+#endif
 #endif
 
 K bitfni(K x)

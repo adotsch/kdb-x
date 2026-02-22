@@ -3,9 +3,9 @@
 #ifndef BINOP
 
 #define BINOP   AND
-#define binop   and
-#define binopx0 andx0
-#define binop0y and0y
+#define binop   bitand
+#define binopx0 bitandx0
+#define binop0y bitand0y
 
 #endif
 

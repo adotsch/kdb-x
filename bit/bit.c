@@ -1,20 +1,22 @@
 #include "binop.c"      //and
 
 #define BINOP OR
-#define binop or
-#define binopx0 orx0
-#define binop0y or0y
+#define binop bitor
+#define binopx0 bitorx0
+#define binop0y bitor0y
 #include "binop.c"
 
 #define BINOP XOR
-#define binop xor
-#define binopx0 xorx0
-#define binop0y xor0y
+#define binop bitxor
+#define binopx0 bitxorx0
+#define binop0y bitxor0y
 #include "binop.c"
+
 
 #define CNTUU 1
 #include "bitfni.c"     //popc
 #undef CNTUU
+
 
 #define LZUU 1
 #define bitfni      leadz
@@ -33,5 +35,5 @@
 __attribute__((visibility("default")))
 K1(kexport)
 {
-    R k(0,"`bitnot`bitand`bitor`bitxor`bitcount`leadz`trailz!",knk(7,dl(not,1),dl(and,2),dl(or,2),dl(xor,2),dl(popc,1),dl(leadz,1),dl(trailz,1)),0);
+    R k(0,"`bitnot`bitand`bitor`bitxor`bitcount`leadz`trailz!",knk(7,dl(bitnot,1),dl(bitand,2),dl(bitor,2),dl(bitxor,2),dl(bitcount,1),dl(leadz,1),dl(trailz,1)),0);
 }

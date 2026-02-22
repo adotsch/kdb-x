@@ -1,6 +1,6 @@
 #include "bit.h"
 
-K not(K x)
+K bitnot(K x)
 {
     switch(xt)
     {
@@ -18,17 +18,17 @@ K not(K x)
         {
             K r = ktn(0,xn);
             for(J N=xn,i=0;i<N;i++)
-                if(!(kK(r)[i]=not(xK[i]))) return r->n=i,r0(r),(K)0;
+                if(!(kK(r)[i]=bitnot(xK[i]))) return r->n=i,r0(r),(K)0;
             return r;
         }
         case 99:
         {
-            K nxy = not(xy);
+            K nxy = bitnot(xy);
             return nxy ? xD(r1(xx),nxy) : nxy;
         }
         case 98:
         {
-            K nt = not(x->k);
+            K nt = bitnot(x->k);
             return nt ? xT(nt) : nt;
         }
     }
