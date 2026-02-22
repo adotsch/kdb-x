@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS=-O3 -std=c11 -fvisibility=hidden -fPIC
-#CFLAGS=-g -std=c11 -fPIC
+CFLAGS=-O3 -std=c11 -fvisibility=hidden -fPIC -s -shared
+#CFLAGS=-g -std=c11 -fPIC -shared
 LFLAGS=-s
 M:=$(shell $(CC) -dumpmachine)
 A:=$(if $(filter %-linux-gnu,$M),l)$(if $(findstring -apple-,$M),m)$(if $(filter %-mingw32 %-msvc,$M),w)
@@ -36,6 +36,9 @@ q.def: Makefile
 
 libq.a: q.def
 	$(DLLTOOL) -v -l $@ -d $<
+
+$(LIB): $(SOURCES) k.h $(LA)
+	$(CC) $(CFLAGS) $< $(LA) -o $@
 
 clean:
 	-rm k.h
