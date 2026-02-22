@@ -1,2 +1,2 @@
-make -C bit clean
-make -C p2re clean
+for dir in */; do make -C $dir clean; done
+rm dot.zip

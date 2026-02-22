@@ -1,4 +1,4 @@
-zip tmp.zip */init*.* */*.md
+zip tmp.zip *.md */init*.* */*.md
 rm -rf dot
 mkdir dot
 cd dot && unzip ../tmp.zip && cd ..
