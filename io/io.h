@@ -35,4 +35,5 @@
 #define STRLEN   __builtin_strlen
 #define STRNCPY  __builtin_strncpy
 #define SNPRINTF __builtin_snprintf
+#define MEMCPY   __builtin_memcpy
 #endif
