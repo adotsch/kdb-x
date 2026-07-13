@@ -17,7 +17,7 @@ All Linux binaries are compatible with GLIBC 2.12 and above, i.e. they work even
 
 ## Installation
 
-Download the release package from [releases](https://github.com/atdotsch/kdb-x/releases) and unzip it in your KDB-X `mod` directory.
+Download the release package from [releases](https://github.com/adotsch/kdb-x/releases) and unzip it in your KDB-X `mod` directory.
 
 ## Quick Start
 
