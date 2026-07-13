@@ -7,7 +7,7 @@ all: $(TARGETS)
 all64: $(TARGETS_64)
 all32: $(TARGETS_32)
 
-SOURCES=*.c *.h
+SOURCES=*.c $(wildcard *.h)
 
 k.h:
 	curl -L https://github.com/KxSystems/kdb/raw/master/c/c/k.h > $@

@@ -5,8 +5,6 @@ set -e
 rm -rf dot
 mkdir -p dot
 
-cp init.q README.md LICENSE dot/
-
 # Copy all files matching */init* and subdir README.md files into dot/, preserving directory structure
 for file in */init* */README.md; do
     if [ -f "$file" ]; then
@@ -15,6 +13,8 @@ for file in */init* */README.md; do
         cp "$file" "dot/$file"
     fi
 done
+
+cp init.q README.md LICENSE dot/
 
 # Zip the dot/ directory into dot.zip
 rm -f dot.zip
