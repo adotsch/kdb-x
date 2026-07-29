@@ -9,6 +9,7 @@ The following is a table of the existing modules and their supported platforms.
 | Module | Description  | Mac Intel | Mac Arm | Linux Intel | Linux Arm | Windows Intel |
 | -------| ------------ | --------- | ------- | ----------- | --------- | ------------- |
 | [bit](bit/README.md)         | bitwise operators   | ✅ | ✅ | ✅ | ✅ | ✅ |
+| [defer](defer/README.md)     | deferred execution  | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [flock](flock/README.md)     | advisory locks      | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [udp](udp/README.md)         | UDP messaging       | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [selectk](selectk/README.md) | selection algorithm | ✅ | ✅ | ✅ | ✅ | ✅ |

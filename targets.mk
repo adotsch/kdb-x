@@ -12,5 +12,3 @@ LA32=init.la32.so
 WI32=init.wi32.dll
 
 TARGETS_32=$(LI32) $(LA32) $(WI32) 
-
-TARGETS=$(TARGETS_64) 

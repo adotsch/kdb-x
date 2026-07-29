@@ -25,9 +25,6 @@ q) h ujoin `224.1.2.3
 q) // Send message to multicast group
 q) usend[`224.1.2.3;5000;"hello multicast"];
 (`udp;`192.168.1.100;0x68656c6c6f206d756c746963617374)
-q) // Stop listening on port 5000
-q) ulisten[-5000;::]
-1b
 q) // List all network interfaces
 q) ifls[]
 interface      | address       netmask       broadcast     
@@ -37,6 +34,9 @@ enp4s0         | 192.168.1.100 255.255.255.0 192.168.1.255
 q) // Send broadcast message to the second interfaces's broadcast address
 q) usend[`192.168.1.255;5000;"hello world"];
 (`udp;`192.168.1.100;0x68656c6c6f20776f726c64)
+q) // Stop listening on port 5000
+q) ulisten[-5000;::]
+1b
 ```
 
 ## About UDP

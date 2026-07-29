@@ -92,7 +92,7 @@ The example above takes advantage of the (undocumented) fact that [`fby`](https:
 
 ## History
 
-This module in an expanded version of a helper function I originally developed for [Temporal Similarity Search](https://code.kx.com/kdb-x/ref/ai-libs/tss-index-parameters.html) while working at KX.
+This module is an expanded version of a helper function I originally developed for [Temporal Similarity Search](https://code.kx.com/kdb-x/ref/ai-libs/tss-index-parameters.html) while working at KX.
 
 The module was considered for inclusion in the official KDB-X module library, and I still believe that's its natural home. Since I no longer work at KX and the integration wasn't completed in time, KX approved publishing the code independently.
 

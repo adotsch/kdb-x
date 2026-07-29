@@ -5,3 +5,4 @@ $MAKE bit $@
 $MAKE selectk $@
 $MAKE udp $@
 $MAKE flock $@
+$MAKE defer $@

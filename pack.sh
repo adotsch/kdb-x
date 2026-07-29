@@ -5,8 +5,8 @@ set -e
 rm -rf dot
 mkdir -p dot
 
-# Copy all files matching */init* and subdir README.md files into dot/, preserving directory structure
-for file in */init* */README.md; do
+# Copy all files matching */init* and subdir markdown files into dot/, preserving directory structure
+for file in */init* */*.md; do
     if [ -f "$file" ]; then
         dir=$(dirname "$file")
         mkdir -p "dot/$dir"
