@@ -14,6 +14,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #include <iphlpapi.h>
 #ifndef socklen_t
 typedef int socklen_t;
@@ -36,32 +37,147 @@ typedef struct {I h,p; K cb;} udp_cb;
 #ifdef _WIN32
 Z void udp_init(void) __attribute__((constructor));
 Z void udp_init(void) { WSADATA wsaData; WSAStartup(MAKEWORD(2,2), &wsaData); }
+Z LPFN_WSARECVMSG pWSARecvMsg = NULL;
 #endif
 
 Z I udp_sock = -1;
 Z I n_udp_cbs = 0;
 Z udp_cb* udp_cbs = 0;
+Z struct in_addr udp_dst_in = {0};
 
 Z I mk_udp_socket(I broadcast)
 {
     I sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
     if(sock<0) R orr("socket"),-1;
+    I yes = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
+#ifdef SO_REUSEPORT
+    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, (const char*)&yes, sizeof(yes));
+#endif
     if(broadcast)
     {
-        I yes = 1;
         if(0>setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(const char*)&yes,sizeof(yes)))
             R orr("broadcast"),close(sock),-1;
     }
+#if defined(__linux__)
+    setsockopt(sock, IPPROTO_IP, IP_PKTINFO, (const char*)&yes, sizeof(yes));
+#elif defined(__APPLE__)
+    setsockopt(sock, IPPROTO_IP, IP_RECVDSTADDR, (const char*)&yes, sizeof(yes));
+#elif defined(_WIN32)
+    setsockopt(sock, IPPROTO_IP, IP_PKTINFO, (const char*)&yes, sizeof(yes));
+    if(!pWSARecvMsg)
+    {
+        GUID guid = WSAID_WSARECVMSG;
+        DWORD bytes = 0;
+        WSAIoctl((SOCKET)sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                 &guid, sizeof(guid),
+                 &pWSARecvMsg, sizeof(pWSARecvMsg),
+                 &bytes, NULL, NULL);
+    }
+#endif
     R sock;
+}
+
+Z ssize_t recv_pkt(I h, char *buf, size_t max_len, struct sockaddr_in *sender)
+{
+    udp_dst_in.s_addr = 0;
+#if !defined(_WIN32)
+    struct iovec iov = {
+        .iov_base = buf,
+        .iov_len = max_len
+    };
+    union {
+        char buf[1024];
+        struct cmsghdr align;
+    } ctrl;
+    memset(&ctrl, 0, sizeof(ctrl));
+
+    struct msghdr msg = {
+        .msg_name = sender,
+        .msg_namelen = sizeof(*sender),
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = ctrl.buf,
+        .msg_controllen = sizeof(ctrl.buf)
+    };
+
+    ssize_t len = recvmsg(h, &msg, 0);
+    if(len <= 0) R len;
+
+    for(struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg))
+    {
+        if(cmsg->cmsg_level == IPPROTO_IP)
+        {
+#if defined(__linux__)
+            if(cmsg->cmsg_type == IP_PKTINFO)
+            {
+                struct in_pktinfo *pkt = (struct in_pktinfo *)CMSG_DATA(cmsg);
+                udp_dst_in = pkt->ipi_addr;
+                break;
+            }
+#elif defined(__APPLE__)
+            if(cmsg->cmsg_type == IP_RECVDSTADDR)
+            {
+                struct in_addr *in = (struct in_addr *)CMSG_DATA(cmsg);
+                udp_dst_in = *in;
+                break;
+            }
+#endif
+        }
+    }
+    R len;
+#else // _WIN32
+    if(!pWSARecvMsg)
+    {
+        GUID guid = WSAID_WSARECVMSG;
+        DWORD bytes = 0;
+        WSAIoctl((SOCKET)h, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                 &guid, sizeof(guid),
+                 &pWSARecvMsg, sizeof(pWSARecvMsg),
+                 &bytes, NULL, NULL);
+    }
+
+    WSABUF wsa_buf = { .len = (ULONG)max_len, .buf = buf };
+    union {
+        char buf[1024];
+        WSACMSGHDR align;
+    } ctrl;
+    memset(&ctrl, 0, sizeof(ctrl));
+
+    WSAMSG msg = {0};
+    msg.name = (struct sockaddr*)sender;
+    msg.namelen = sizeof(*sender);
+    msg.lpBuffers = &wsa_buf;
+    msg.dwBufferCount = 1;
+    msg.Control.buf = ctrl.buf;
+    msg.Control.len = sizeof(ctrl.buf);
+
+    DWORD bytes_recvd = 0;
+    if(pWSARecvMsg && pWSARecvMsg((SOCKET)h, &msg, &bytes_recvd, NULL, NULL) == 0)
+    {
+        for(LPWSACMSGHDR cmsg = WSA_CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = WSA_CMSG_NXTHDR(&msg, cmsg))
+        {
+            if(cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO)
+            {
+                IN_PKTINFO *pkt = (IN_PKTINFO *)WSA_CMSG_DATA(cmsg);
+                udp_dst_in = pkt->ipi_addr;
+                break;
+            }
+        }
+        R (ssize_t)bytes_recvd;
+    }
+
+    socklen_t sender_len = sizeof(*sender);
+    R recvfrom(h, buf, max_len, 0, (struct sockaddr*)sender, &sender_len);
+#endif
 }
 
 K udp_recv(I h)
 {
     char buf[65536];
     struct sockaddr_in sender;
-    socklen_t sender_len = sizeof(sender);
-    ssize_t len = recvfrom(h,buf,sizeof(buf)-1,0,(struct sockaddr*)&sender,&sender_len);
-    if(len)
+    ssize_t len = recv_pkt(h, buf, sizeof(buf)-1, &sender);
+    if(len > 0)
     {
         K in_addr = ks(inet_ntoa(sender.sin_addr));
         K msg = ktn(KG,len); MEMCPY(kC(msg),buf,len);
@@ -76,19 +192,19 @@ K udp_recv(I h)
                 r0(e);
             }
     }
+    udp_dst_in.s_addr = 0;
     R 0;
+}
+
+K udp_dest(K unused)
+{
+    R ks(udp_dst_in.s_addr ? inet_ntoa(udp_dst_in) : "");
 }
 
 K udp_socket(K br)
 {
-    int sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
-    if(sock<0) R orr("socket");
-    if(br->t==-KB && br->g==1)
-    {
-        int yes = 1;
-        if(0>setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(const char*)&yes,sizeof(yes)))
-            R orr("broadcast");
-    }
+    I sock = mk_udp_socket(br->t==-KB && br->g==1);
+    if(sock<0) R 0;
     R ki(sock);
 }
 
@@ -265,5 +381,5 @@ K interfaces(K unused)
 __attribute__((visibility("default")))
 K kexport()
 {
-    R k(0,"`ulisten`ujoin`usend`ifls!",knk(4,dl(udp_listen,2),dl(ujoin,2),dl(udp_send,3),dl(interfaces,1)),0);
+    R k(0,"`ulisten`ujoin`udest`usend`ifls!",knk(5,dl(udp_listen,2),dl(ujoin,2),dl(udp_dest,1),dl(udp_send,3),dl(interfaces,1)),0);
 }

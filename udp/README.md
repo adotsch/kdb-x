@@ -53,6 +53,7 @@ This module provides functions to:
 - listen/unlisten on a specific port for UDP messages
 - send UDP messages
 - join/leave multicast groups
+- determine the source and destination address of messages
 - list network interfaces
 
 ## Functions
@@ -72,6 +73,27 @@ Starts or stops listening for incoming UDP messages on a port.
 - **Returns**:
   - When starting: The underlying integer socket descriptor.
   - When stopping: A boolean indicating success (`1b`) or failure (`0b`).
+
+> [!NOTE]
+> **Port and Address Reuse**: Sockets created with `ulisten` are automatically configured to reuse the port. This allows multiple sockets or processes to bind to the same port simultaneously and allows using the Q IPC port for UDP as well.
+
+### `udest`
+
+Returns the destination IP address of the UDP message currently being processed.
+
+- **Syntax**: `udest[]`
+- **Arguments**: none (or unused atom).
+- **Returns**: Symbol representing the destination IPv4 address (e.g. ``` `224.4.70.16 ``` or local interface IP). Returns the null symbol (``` ` ```) if invoked outside of an active message callback.
+
+When listening to multiple multicast groups on the same port, `udest[]` allows your callback to identify which group the incoming message was addressed to:
+
+```q
+q) upd: {[sender;msg] 0N!(sender; udest[]; msg)}
+q) h: ulisten[5000; `upd]
+q) h ujoin `224.1.2.3;
+q) h ujoin `224.1.2.4;
+// When a packet arrives, udest[] returns `224.1.2.3 or `224.1.2.4
+```
 
 ### `usend`
 
@@ -117,13 +139,15 @@ We can use [`-18!`](https://code.kx.com/q/basics/internal/#-18x-compress-bytes) 
 q) h:ulisten[5000;{get -9!y}]
 q) send:{[a;m] usend[a;5000;-18!m]}
 ```
-Multicast groups can be used to implement pub/sub without a Tickerplant (or other centralized server).
+Multicast groups can be used to implement pub/sub without a Tickerplant (or other centralized server). Using `udest[]`, the receiver callback can route messages by topic:
 ```q
 q) gr.trade: `224.0.0.1       //trade group
 q) gr.quote: `224.0.0.2       //quote group
+q) h: ulisten[5000; {[sender;msg]
+     upsert[gr?udest[]; -9!msg]
+   }]
 q) h ujoin/ gr`trade`quote;   //"subscribe" to both
-q) upd: upsert
-q) send[gr.trade;(`upd;`trade;([]sym:`a`b;time:.z.p;price:2?100f;size:2?1000))]
+q) send[gr.trade; ([]sym:`a`b;time:.z.p;price:2?100f;size:2?1000)]
 ```
 
 ### MineCraft monitoring
