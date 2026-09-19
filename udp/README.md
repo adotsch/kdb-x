@@ -12,19 +12,19 @@ q) .q,:use`dot.udp
 q) // Listen on port 5000 and print UDP messages
 q) h: ulisten[5000;{0N!(`udp;x;y)}]
 q) // Send a UDP message to localhost (to self) on port 5000
-q) usend[`localhost;5000;"hi"];
-(`udp;`192.168.1.100;0x6869)
+q) usend[`127.0.0.1;5000;"hi"];
+(`udp;`127.0.0.1`127.0.0.1;0x6869)
 q) // Send a UDP message to another machine on the network
 q) usend[`192.168.1.110;5000;"hi there"];
 q) // Send message to everyone listening on port 5000 on the local network (broadcast)
 q) usend[`255.255.255.255;5000;"hello world"];
-(`udp;`192.168.1.100;0x68656c6c6f20776f726c64)
+(`udp;`192.168.1.100`255.255.255.255;0x68656c6c6f20776f726c64)
 q) // Join a multicast group (the address in arbitary in `224.0.0.0` - `239.255.255.255`)
 q) h ujoin `224.1.2.3
 4i
 q) // Send message to multicast group
 q) usend[`224.1.2.3;5000;"hello multicast"];
-(`udp;`192.168.1.100;0x68656c6c6f206d756c746963617374)
+(`udp;`192.168.1.100`224.1.2.3;0x68656c6c6f206d756c746963617374)
 q) // List all network interfaces
 q) ifls[]
 interface      | address       netmask       broadcast     
@@ -33,7 +33,7 @@ lo             | 127.0.0.1     255.0.0.0
 enp4s0         | 192.168.1.100 255.255.255.0 192.168.1.255
 q) // Send broadcast message to the second interfaces's broadcast address
 q) usend[`192.168.1.255;5000;"hello world"];
-(`udp;`192.168.1.100;0x68656c6c6f20776f726c64)
+(`udp;`192.168.1.100`192.168.1.255;0x68656c6c6f20776f726c64)
 q) // Stop listening on port 5000
 q) ulisten[-5000;::]
 1b
@@ -67,8 +67,10 @@ Starts or stops listening for incoming UDP messages on a port.
   - `port`: long or int.
     - If `port > 0`: starts listening on the specified port.
     - If `port < 0`: stops listening on `neg[port]`.
-  - `callback`: dyadic function: `callback:{[address;message]…}`.
-    - `address`: symbol, the sender's IP address.
+  - `callback`: dyadic function: `callback:{[addresses;message]…}`.
+    - `addresses`: symbol vector of 2 elements:
+      - `addresses[0]`: symbol, the sender's IP address.
+      - `addresses[1]`: symbol, the destination IP address (e.g. multicast group address or receiving interface IP).
     - `message`: byte vector, the packet payload.
 - **Returns**:
   - When starting: The underlying integer socket descriptor.
@@ -76,24 +78,6 @@ Starts or stops listening for incoming UDP messages on a port.
 
 > [!NOTE]
 > **Port and Address Reuse**: Sockets created with `ulisten` are automatically configured to reuse the port. This allows multiple sockets or processes to bind to the same port simultaneously and allows using the Q IPC port for UDP as well.
-
-### `udest`
-
-Returns the destination IP address of the UDP message currently being processed.
-
-- **Syntax**: `udest[]`
-- **Arguments**: none (or unused atom).
-- **Returns**: Symbol representing the destination IPv4 address (e.g. ``` `224.4.70.16 ``` or local interface IP). Returns the null symbol (``` ` ```) if invoked outside of an active message callback.
-
-When listening to multiple multicast groups on the same port, `udest[]` allows your callback to identify which group the incoming message was addressed to:
-
-```q
-q) upd: {[sender;msg] 0N!(sender; udest[]; msg)}
-q) h: ulisten[5000; `upd]
-q) h ujoin `224.1.2.3;
-q) h ujoin `224.1.2.4;
-// When a packet arrives, udest[] returns `224.1.2.3 or `224.1.2.4
-```
 
 ### `usend`
 
@@ -139,13 +123,11 @@ We can use [`-18!`](https://code.kx.com/q/basics/internal/#-18x-compress-bytes) 
 q) h:ulisten[5000;{get -9!y}]
 q) send:{[a;m] usend[a;5000;-18!m]}
 ```
-Multicast groups can be used to implement pub/sub without a Tickerplant (or other centralized server). Using `udest[]`, the receiver callback can route messages by topic:
+Multicast groups can be used to implement pub/sub without a Tickerplant (or other centralized server). The second element of the address vector indicates the destination group, allowing the receiver callback to route messages by topic:
 ```q
 q) gr.trade: `224.0.0.1       //trade group
 q) gr.quote: `224.0.0.2       //quote group
-q) h: ulisten[5000; {[sender;msg]
-     upsert[gr?udest[]; -9!msg]
-   }]
+q) h: ulisten[5000; {[ips;msg] upsert[gr?ips 1; -9!msg]}]
 q) h ujoin/ gr`trade`quote;   //"subscribe" to both
 q) send[gr.trade; ([]sym:`a`b;time:.z.p;price:2?100f;size:2?1000)]
 ```
@@ -156,7 +138,7 @@ When the MineCraft Bedrock edition starts up it imediately starts sending UDP br
 We can use `ulisten` to monitor that and join the party.
 
 ```q
-q) ulisten[19132;{0N!(`mc;x;y)}]
+q) ulisten[19132;{0N!(`mc;x 0;y)}]
 (`mc;`192.168.1.110;0x0100000000386a435900ffff00fefefefefdfdfdfd12345678afded273ce4ea162)
 (`mc;`192.168.1.198;0x01000000000001718b00ffff00fefefefefdfdfdfd12345678823e6e6f1cb650a6)
 (`mc;`192.168.1.110;0x0100000000386a475100ffff00fefefefefdfdfdfd12345678afded273ce4ea162)
@@ -165,7 +147,7 @@ q) ulisten[19132;{0N!(`mc;x;y)}]
 Similarly, when a Java edition user hosts a "Local to LAN" world, their client continuously broadcasts server information so other players on the same network can see it.
 These broadcasts messages are sent to group ``224.0.2.60`` on port ``4445``.
 ```q
-q) ulisten[4445;{0N!(`mc.java;x;"c"$y)}] ujoin `224.0.2.60;
+q) ulisten[4445;{0N!(`mc.java;x 0;"c"$y)}] ujoin `224.0.2.60;
 (`mc.java;`192.168.1.110;"[MOTD]MCUser - New World[/MOTD][AD]53758[/AD]")
 (`mc.java;`192.168.1.110;"[MOTD]MCUser - New World[/MOTD][AD]53758[/AD]")
 (`mc.java;`192.168.1.110;"[MOTD]MCUser - New World[/MOTD][AD]53758[/AD]")

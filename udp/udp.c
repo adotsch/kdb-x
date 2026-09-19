@@ -43,7 +43,6 @@ Z LPFN_WSARECVMSG pWSARecvMsg = NULL;
 Z I udp_sock = -1;
 Z I n_udp_cbs = 0;
 Z udp_cb* udp_cbs = 0;
-Z struct in_addr udp_dst_in = {0};
 
 Z I mk_udp_socket(I broadcast)
 {
@@ -78,9 +77,9 @@ Z I mk_udp_socket(I broadcast)
     R sock;
 }
 
-Z ssize_t recv_pkt(I h, char *buf, size_t max_len, struct sockaddr_in *sender)
+Z ssize_t recv_pkt(I h, char *buf, size_t max_len, struct sockaddr_in *sender, struct in_addr *dst)
 {
-    udp_dst_in.s_addr = 0;
+    dst->s_addr = 0;
 #if !defined(_WIN32)
     struct iovec iov = {
         .iov_base = buf,
@@ -112,14 +111,14 @@ Z ssize_t recv_pkt(I h, char *buf, size_t max_len, struct sockaddr_in *sender)
             if(cmsg->cmsg_type == IP_PKTINFO)
             {
                 struct in_pktinfo *pkt = (struct in_pktinfo *)CMSG_DATA(cmsg);
-                udp_dst_in = pkt->ipi_addr;
+                *dst = pkt->ipi_addr;
                 break;
             }
 #elif defined(__APPLE__)
             if(cmsg->cmsg_type == IP_RECVDSTADDR)
             {
                 struct in_addr *in = (struct in_addr *)CMSG_DATA(cmsg);
-                udp_dst_in = *in;
+                *dst = *in;
                 break;
             }
 #endif
@@ -160,7 +159,7 @@ Z ssize_t recv_pkt(I h, char *buf, size_t max_len, struct sockaddr_in *sender)
             if(cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO)
             {
                 IN_PKTINFO *pkt = (IN_PKTINFO *)WSA_CMSG_DATA(cmsg);
-                udp_dst_in = pkt->ipi_addr;
+                *dst = pkt->ipi_addr;
                 break;
             }
         }
@@ -176,29 +175,28 @@ K udp_recv(I h)
 {
     char buf[65536];
     struct sockaddr_in sender;
-    ssize_t len = recv_pkt(h, buf, sizeof(buf)-1, &sender);
+    struct in_addr dst = {0};
+    ssize_t len = recv_pkt(h, buf, sizeof(buf)-1, &sender, &dst);
     if(len > 0)
     {
-        K in_addr = ks(inet_ntoa(sender.sin_addr));
+        K ips = ktn(KS,2);
+        kS(ips)[0] = ss(inet_ntoa(sender.sin_addr));
+        kS(ips)[1] = ss(dst.s_addr ? inet_ntoa(dst) : "");
         K msg = ktn(KG,len); MEMCPY(kC(msg),buf,len);
         for(int i=0;i<n_udp_cbs;i++)
             if(udp_cbs[i].h==h)
             {
-                K e = k(0,".",r1(udp_cbs[i].cb),knk(2,in_addr,msg),0);
+                K e = k(0,".",r1(udp_cbs[i].cb),knk(2,r1(ips),r1(msg)),0);
                 if(e->t==-128)
                 {
                     PR("udp message error on socket %i: %s\n",h,e->s);
                 }
                 r0(e);
             }
+        r0(ips);
+        r0(msg);
     }
-    udp_dst_in.s_addr = 0;
     R 0;
-}
-
-K udp_dest(K unused)
-{
-    R ks(udp_dst_in.s_addr ? inet_ntoa(udp_dst_in) : "");
 }
 
 K udp_socket(K br)
@@ -381,5 +379,5 @@ K interfaces(K unused)
 __attribute__((visibility("default")))
 K kexport()
 {
-    R k(0,"`ulisten`ujoin`udest`usend`ifls!",knk(5,dl(udp_listen,2),dl(ujoin,2),dl(udp_dest,1),dl(udp_send,3),dl(interfaces,1)),0);
+    R k(0,"`ulisten`ujoin`usend`ifls!",knk(4,dl(udp_listen,2),dl(ujoin,2),dl(udp_send,3),dl(interfaces,1)),0);
 }
