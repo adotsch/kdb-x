@@ -1,0 +1,45 @@
+context:
+  version: "20260729"
+  modules: [bit, defer, flock, udp, selectk]
+
+package:
+  name: q-dot
+  version: ${{ version }}
+
+source:
+  path: ..
+  filter:
+    exclude:
+      - recipe/**
+
+build:
+  number: 0
+  noarch: generic
+  script:
+    - for m in bit defer flock udp selectk; do
+        cp k.h $m/k.h;
+        make -C $m;
+      done
+    - DEST=$PREFIX/lib/q/mod/dot
+    - mkdir -p $DEST
+    - cp init.q README.md LICENSE $DEST/
+    - for m in bit defer flock udp selectk; do
+        mkdir -p $DEST/$m;
+        cp $m/init.*.* $DEST/$m/;
+        cp $m/README.md $DEST/$m/;
+      done
+
+requirements:
+  build:
+    - make
+    - zig ==0.13.0
+    - patchelf
+
+tests:
+  - script:
+      - test -f ${PREFIX}/lib/q/mod/dot/init.q
+      - test -f ${PREFIX}/lib/q/mod/dot/bit/init.li64.so
+      - test -f ${PREFIX}/lib/q/mod/dot/defer/init.li64.so
+      - test -f ${PREFIX}/lib/q/mod/dot/flock/init.li64.so
+      - test -f ${PREFIX}/lib/q/mod/dot/udp/init.li64.so
+      - test -f ${PREFIX}/lib/q/mod/dot/selectk/init.li64.so
