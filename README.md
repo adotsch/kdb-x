@@ -52,6 +52,11 @@ To build only a specific module for a specific target, like x86_64 Linux:
 ```sh
  $ sh mk0.sh <module> init.li64.so
 ```
+To build a conda package:
+
+```sh
+$ sh mk_conda.sh
+```
 
 ## Donations
 

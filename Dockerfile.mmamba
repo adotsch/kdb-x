@@ -1,0 +1,12 @@
+FROM mambaorg/micromamba:latest
+
+RUN micromamba create -y -n build -c conda-forge rattler-build rattler-index && \
+    micromamba clean -afy
+
+USER root
+RUN chmod -R 777 /home/mambauser /opt/conda
+USER mambauser
+
+ENV ENV_NAME=build
+ENV PATH="/opt/conda/envs/build/bin:$PATH"
+WORKDIR /app

@@ -18,7 +18,7 @@ build:
   script:
     - for m in bit defer flock udp selectk; do
         cp k.h $m/k.h;
-        make -C $m;
+        make -C $m all64 all32;
       done
     - DEST=$PREFIX/lib/q/mod/dot
     - mkdir -p $DEST
