@@ -1,4 +1,4 @@
-# IPC and Network Utilities for KDB
+# UDP messaging for KDB
 
 ## Intro
 
