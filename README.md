@@ -6,13 +6,13 @@ This repository contains a collection of KDB-X modules implemented in C, built w
 
 The following is a table of the existing modules and their supported platforms.
 
-| Module | Description  | Mac Intel | Mac Arm | Linux Intel | Linux Arm | Windows Intel |
-| -------| ------------ | --------- | ------- | ----------- | --------- | ------------- |
-| [bit](bit/README.md)         | bitwise operators   | ✅ | ✅ | ✅ | ✅ | ✅ |
-| [defer](defer/README.md)     | deferred execution  | ✅ | ✅ | ✅ | ✅ | ✅ |
-| [flock](flock/README.md)     | advisory locks      | ✅ | ✅ | ✅ | ✅ | ✅ |
-| [udp](udp/README.md)         | UDP messaging       | ✅ | ✅ | ✅ | ✅ | ✅ |
-| [selectk](selectk/README.md) | selection algorithm | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Module | Description  | Mac x64 | Mac Arm | Linux x64 | Linux x86 | Linux Arm | Windows x64 | Windows x86 |
+| -------| ------------ | --------- | ------- | ----------- | --------- | ------------- |-------------|-------------|
+| [bit](bit/README.md)         | bitwise operators   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| [defer](defer/README.md)     | deferred execution  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| [flock](flock/README.md)     | advisory locks      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| [udp](udp/README.md)         | UDP messaging       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| [selectk](selectk/README.md) | selection algorithm | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 All Linux binaries are compatible with GLIBC 2.12 and above, i.e. they work even on very old distributions like Centos 6 or Red Hat 6.
 
@@ -52,8 +52,7 @@ To build only a specific module for a specific target, like x86_64 Linux:
 ```sh
  $ sh mk0.sh <module> init.li64.so
 ```
-To build a conda package:
-
+To build a conda package for [qmamba](https://github.com/KxSystems/qmamba):
 ```sh
 $ sh mk_conda.sh
 ```
