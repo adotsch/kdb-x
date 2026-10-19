@@ -1,5 +1,5 @@
 context:
-  version: "20260729"
+  version: "20261020"
   modules: [bit, defer, flock, udp, selectk]
 
 package:
