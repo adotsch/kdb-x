@@ -54,7 +54,7 @@ To build only a specific module for a specific target, like x86_64 Linux:
 ```
 To build a conda package for [qmamba](https://github.com/KxSystems/qmamba):
 ```sh
-$ sh mk_conda.sh
+$ sh mk_conda.sh --target-platform linux-64
 ```
 
 ## Donations

@@ -1,5 +1,5 @@
 context:
-  version: "20261020"
+  version: ${{ env.get("MODULE_VERSION", default="20261020") }}
   modules: [bit, defer, flock, udp, selectk]
 
 package:
@@ -14,20 +14,15 @@ source:
 
 build:
   number: 0
-  noarch: generic
   script:
-    - for m in bit defer flock udp selectk; do
-        cp k.h $m/k.h;
-        make -C $m all64 all32;
-      done
-    - DEST=$PREFIX/lib/q/mod/dot
-    - mkdir -p $DEST
-    - cp init.q README.md LICENSE $DEST/
-    - for m in bit defer flock udp selectk; do
-        mkdir -p $DEST/$m;
-        cp $m/init.*.* $DEST/$m/;
-        cp $m/README.md $DEST/$m/;
-      done
+    file: build.sh
+    env:
+      TARGET_PLATFORM: ${{ target_platform }}
+  # The binaries are cross-compiled and have no conda dependencies to
+  # relocate. Relinking would shell out to install_name_tool (macOS targets),
+  # which doesn't exist on the linux build host.
+  dynamic_linking:
+    binary_relocation: false
 
 requirements:
   build:
@@ -36,10 +31,12 @@ requirements:
     - patchelf
 
 tests:
-  - script:
-      - test -f ${PREFIX}/lib/q/mod/dot/init.q
-      - test -f ${PREFIX}/lib/q/mod/dot/bit/init.li64.so
-      - test -f ${PREFIX}/lib/q/mod/dot/defer/init.li64.so
-      - test -f ${PREFIX}/lib/q/mod/dot/flock/init.li64.so
-      - test -f ${PREFIX}/lib/q/mod/dot/udp/init.li64.so
-      - test -f ${PREFIX}/lib/q/mod/dot/selectk/init.li64.so
+  - if: target_platform == "linux-64"
+    then:
+      script:
+        - test -f ${PREFIX}/lib/q/mod/dot/init.q
+        - test -f ${PREFIX}/lib/q/mod/dot/bit/init.li64.so
+        - test -f ${PREFIX}/lib/q/mod/dot/defer/init.li64.so
+        - test -f ${PREFIX}/lib/q/mod/dot/flock/init.li64.so
+        - test -f ${PREFIX}/lib/q/mod/dot/udp/init.li64.so
+        - test -f ${PREFIX}/lib/q/mod/dot/selectk/init.li64.so
